@@ -1,3 +1,4 @@
+-- local script
 local label = script.Parent
 local gui = label.Parent.Parent
 local Writing = false
@@ -18,23 +19,26 @@ local messages = {
 	[4] = nil
 }
 
+SansEvent.OnClientEvent:Connect(function()
+	print("recieved")
+end)
+
 local function TextInput(message:string)
 	if played == true then return end
 	if message == nil then 
 		gui.Enabled = false
 		button.Active = false
 		Writing = false
-		EventFired = false
 		music:stop()
 		played = true 
 		return
 	end
 	Writing = true
-	
+
 	gui.Enabled = true
 	button.Active = true
 	label.Text = ""
-	
+
 	for i, v in message:split("") do 
 		label.Text = label.Text.. v
 		audio:Play()
@@ -45,7 +49,7 @@ end
 
 button.MouseButton1Up:Connect(function()
 	if gui.Enabled == false then return end
-	if writing == true then return end
+	if Writing == true then return end
 	if button.Active == false then
 		print("help")
 		return
@@ -66,6 +70,16 @@ SansEvent.OnClientEvent:Connect(function()
 	else 
 		music:Play()
 	end
-	
+
 end)
-	
+
+-- Server Script
+local RS = game:GetService("ReplicatedStorage")
+local clickEvent = RS.Events.Sans
+
+local function onPlayerClick(player)
+	clickEvent:FireClient(player)
+end
+
+local clickDetector = game.Workspace.SANSSSSS.ClickDetector
+clickDetector.MouseClick:Connect(onPlayerClick)   
