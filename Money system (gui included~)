@@ -1,0 +1,53 @@
+--Leader stats
+
+game:GetService("Players").PlayerAdded:Connect(function(player)
+	
+	local leaderstats = Instance.new("Folder", player)
+	leaderstats.Name = "leaderstats"
+	local cash = Instance.new("IntValue", leaderstats)
+	cash.Name = "Cash"
+	cash.Value = 0
+	
+end)
+
+-- Money value +  leader stats updating
+
+local money = script.Parent
+local CashAmount = money.Value
+local cantouch = true 
+
+money.Touched:Connect(function(h)
+	if h.Parent:FindFirstChild("Humanoid") then 
+		if not h.Parent:FindFirstChild("NPC") then
+			if cantouch == true then
+				cantouch = false
+				
+				local character = h.Parent
+				local player = game.Players:GetPlayerFromCharacter(character)
+				local leaderstats = player:FindFirstChild("leaderstats")
+				local CashValue = leaderstats:FindFirstChild("Cash")
+				
+				if CashValue then 
+					CashValue.Value = CashValue.Value + CashAmount.Value -- Money part must have IntValue inside
+					money:Destroy()
+				end
+			end
+		end
+	end
+end)
+
+-- Gui sync script
+
+local player = game.Players.LocalPlayer
+local leaderstats = player:WaitForChild("leaderstats")
+local cashValue = leaderstats:WaitForChild("Cash")
+local moneyDisplay = script.Parent.Frame.TextBox
+
+local function updateDisplay()
+    moneyDisplay.Text = "$" .. tostring(cashValue.Value)
+end
+
+updateDisplay()
+
+cashValue.Changed:Connect(updateDisplay)
+
