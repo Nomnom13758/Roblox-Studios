@@ -1,0 +1,71 @@
+local label = script.Parent
+local gui = label.Parent.Parent
+local Writing = false
+local counter = 1 
+local button = label.Parent.TextButton
+local SansEvent = game.ReplicatedStorage.Events.Sans
+local played = false
+local response = gui.response
+
+local audio = gui.DialogueSound
+local music = gui["sans-theme-undertale-remix"]
+
+-- Dialogue
+local messages = {
+	[1] = "*Hi, Wanna hear a joke?",
+	[2] = "*What makes a skeleton laugh?",
+	[3] = "*When their funny bone is tickled!",
+	[4] = nil
+}
+
+local function TextInput(message:string)
+	if played == true then return end
+	if message == nil then 
+		gui.Enabled = false
+		button.Active = false
+		Writing = false
+		EventFired = false
+		music:stop()
+		played = true 
+		return
+	end
+	Writing = true
+	
+	gui.Enabled = true
+	button.Active = true
+	label.Text = ""
+	
+	for i, v in message:split("") do 
+		label.Text = label.Text.. v
+		audio:Play()
+		task.wait(0.06)
+	end
+	Writing = false
+end
+
+button.MouseButton1Up:Connect(function()
+	if gui.Enabled == false then return end
+	if writing == true then return end
+	if button.Active == false then
+		print("help")
+		return
+	end
+	if Writing == false and gui.Enabled == true and button.Active == true then 
+		counter += 1
+		TextInput(messages[counter])
+	end
+end)
+
+SansEvent.OnClientEvent:Connect(function()
+	TextInput(messages[counter])
+	if played == true then
+		response.Enabled = true 
+		task.wait(1)
+		response.Enabled = false
+		return 
+	else 
+		music:Play()
+	end
+	
+end)
+	
