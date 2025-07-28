@@ -124,16 +124,63 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DialogueEvent = ReplicatedStorage.Events.TestDialogue
 local ProxPrompt = script.Parent
 
+-- Variables to store current humanoid and connection
+local invincibleConn = nil
+local currentHumanoid = nil
+
 local function onPlayerInteract(player)
-	DialogueEvent:FireClient(player)
-	ProxPrompt.Enabled = false
+    local character = player.Character
+    if character then
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.WalkSpeed = 0
+            humanoid.JumpPower = 0
+
+            -- Make player invincible
+            humanoid.MaxHealth = math.huge
+            humanoid.Health = math.huge
+
+            -- Disconnect previous connection if any
+            if invincibleConn then
+                invincibleConn:Disconnect()
+                invincibleConn = nil
+            end
+
+            -- Keep health at max while talking
+            invincibleConn = humanoid.HealthChanged:Connect(function()
+                if humanoid.Health < humanoid.MaxHealth then
+                    humanoid.Health = humanoid.MaxHealth
+                end
+            end)
+            currentHumanoid = humanoid
+        end
+    end
+    DialogueEvent:FireClient(player)
+    ProxPrompt.Enabled = false
 end
 
 local function EnableProx(player)
-	ProxPrompt.Enabled = true
+    ProxPrompt.Enabled = true
+    local character = player.Character
+    if character then
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.WalkSpeed = 16
+            humanoid.JumpPower = 50
+
+            -- Restore vulnerability
+            if invincibleConn then
+                invincibleConn:Disconnect()
+                invincibleConn = nil
+            end
+            humanoid.MaxHealth = 100
+            humanoid.Health = 100
+            currentHumanoid = nil
+        end
+    end
 end
 
 ProxPrompt.Triggered:Connect(onPlayerInteract)
-
 DialogueEvent.OnServerEvent:Connect(EnableProx)
-  
+
+
