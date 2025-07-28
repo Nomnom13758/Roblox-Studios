@@ -1,0 +1,114 @@
+local gui = script.Parent.Parent.Parent -- Assuming script is under TextBox, which is under "Text Box" Frame, which is under the ScreenGui
+local label = script.Parent
+local Writing = false
+local currentMessage = 1
+
+local R1 = gui["Text Box"].Response1
+local R2 = gui["Text Box"].Response2
+
+local TestDialogue = game.ReplicatedStorage.Events.TestDialogue
+
+-- Dialogue messages
+local messages = {
+	[1] = "Hi",
+	[2] = "Im good",
+	[3] = "Bruh",
+	[4] = nil
+}
+
+-- Player Responses for each message
+local R1Catalog = {
+	[1] = "Hi",
+	[2] = "lol",
+	[3] = "cool",
+	[4] = nil
+}
+local R2Catalog = {
+	[1] = "Bye",
+	[2] = "Haha",
+	[3] = "Didnt Ask.",
+	[4] = nil
+}
+
+-- Dialogue branching: [currentMessage] = {R1 = nextMessage, R2 = nextMessage}
+local dialogueTree = {
+	[1] = {R1 = 1, R2 = 1}, -- If you pick R1 on message 1, go to 2; R2, go to 3
+	[2] = {R1 = 3, R2 = 3}, -- Both responses go to 4 (end)
+	[3] = {R1 = 2, R2 = 2}, -- Both responses go to 4 (end)
+	[4] = {R1 = nil, R2 = nil}, -- End of dialogue
+}
+
+local function TextInput(messageIndex)
+	local message = messages[messageIndex]
+	if message == nil then 
+		gui.Enabled = false
+		R1.Active = false
+		R2.Active = false
+		Writing = false
+		return
+	end
+	Writing = true
+
+	gui.Enabled = true
+	R1.Active = true
+	R2.Active = true
+	label.Text = ""
+	R1.Text = ""
+	R2.Text = ""
+
+	-- Set response button text from catalogs
+	if R1Catalog[messageIndex] and R1Catalog[messageIndex] ~= "" then
+		R1.Text = R1Catalog[messageIndex]
+		R1.Active = true
+	else
+		R1.Text = ""
+		R1.Active = false
+	end
+	if R2Catalog[messageIndex] and R2Catalog[messageIndex] ~= "" then
+		R2.Text = R2Catalog[messageIndex]
+		R2.Active = true
+	else
+		R2.Text = ""
+		R2.Active = false
+	end
+
+	-- Type out the message
+	for i, v in message:split("") do 
+		label.Text = label.Text.. v
+		task.wait(0.06)
+	end
+	Writing = false
+end
+
+-- When the dialogue event is triggered, start the dialogue
+TestDialogue.OnClientEvent:Connect(function()
+	currentMessage = 1
+	TextInput(currentMessage)
+end)
+
+R1.MouseButton1Up:Connect(function()
+	if gui.Enabled == false then return end
+	if Writing == true then return end
+	if R1.Active == false then return end
+	local nextMessage = dialogueTree[currentMessage] and dialogueTree[currentMessage].R1
+	if nextMessage then
+		currentMessage = nextMessage
+		TextInput(currentMessage)
+	else
+		TextInput(nil)
+	end
+end)
+
+R2.MouseButton1Up:Connect(function()
+	if gui.Enabled == false then return end
+	if Writing == true then return end
+	if R2.Active == false then return end
+	local nextMessage = dialogueTree[currentMessage] and dialogueTree[currentMessage].R2
+	if nextMessage then
+		currentMessage = nextMessage
+		TextInput(currentMessage)
+	else
+		TextInput(nil)
+	end
+end)
+
