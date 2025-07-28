@@ -1,77 +1,84 @@
--- local script
-local label = script.Parent
-local gui = label.Parent.Parent
-local Writing = false
-local counter = 1 
-local button = label.Parent.TextButton
-local SansEvent = game.ReplicatedStorage.Events.Sans
-local played = false
-local response = gui.response
+-- GUI 
+local DialogueGUI = script.Parent.Parent.Parent
+local GuiFrame = DialogueGUI["Text Box"]
+local TextFrame = script.Parent
+local ResponseButton1 = GuiFrame.Response1
+local ResponseButton2 = GuiFrame.Response2
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local EventLog = replicatedStorage.Events.TestDialogue
 
-local audio = gui.DialogueSound
-local music = gui["sans-theme-undertale-remix"]
+-- Sounds/Music
+local DefaultMusic = DialogueGUI["Sounds/Music"].BackgroundMusic
+local DefaultSound = DialogueGUI["Sounds/Music"].TypingSound
 
--- Dialogue
-local messages = {
-	[1] = "*Hi, Wanna hear a joke?",
-	[2] = "*What makes a skeleton laugh?",
-	[3] = "*When their funny bone is tickled!",
-	[4] = nil
+-- variables
+local Typing = false
+local Dialogue = false
+local StartMessage = 1 
+
+-- Message and Response table
+local Messages = {
+	[1] = "Hello World",
+	[2] = nil
 }
 
-SansEvent.OnClientEvent:Connect(function()
-	print("recieved")
-end)
+local response1 = {
+	[1] = "Place Holder!",
+	[2] = nil
+}
 
-local function TextInput(message:string)
-	if played == true then return end
-	if message == nil then 
-		gui.Enabled = false
-		button.Active = false
-		Writing = false
-		music:stop()
-		played = true 
-		return
+local response2 = {
+	[1] = "Place Holder!",
+	[2] = nil
+}
+
+
+-- Messaging/Writing script
+local function TextInput(messages:string)
+	if messages == nil or response1 == nil or response2 == nil then
+		DialogueGUI.Enabled = false
+		Typing = false
+		Dialogue = false
+		StartMessage = 1
+		DefaultMusic:stop()
 	end
-	Writing = true
-
-	gui.Enabled = true
-	button.Active = true
-	label.Text = ""
-
-	for i, v in message:split("") do 
-		label.Text = label.Text.. v
-		audio:Play()
-		task.wait(0.06)
+	DialogueGUI.Enabled = true 
+	Dialogue = true 
+	Typing = true 
+	
+	
+	TextFrame.Text = ""
+	ResponseButton1.Text = ""
+	ResponseButton2.Text = ""
+	
+	-- Messages being typed out 
+	for i, v in messages:split("") do
+		TextFrame.Text = TextFrame.Text..v
+		DefaultSound:Play()
+		wait(0.05)
 	end
-	Writing = false
+	Typing = false
 end
 
-button.MouseButton1Up:Connect(function()
-	if gui.Enabled == false then return end
-	if Writing == true then return end
-	if button.Active == false then
-		print("help")
-		return
-	end
-	if Writing == false and gui.Enabled == true and button.Active == true then 
-		counter += 1
-		TextInput(messages[counter])
-	end
+EventLog.OnClientEvent:Connect(function()
+	TextInput(Messages[StartMessage])
+	DefaultMusic:Play()
 end)
 
-SansEvent.OnClientEvent:Connect(function()
-	TextInput(messages[counter])
-	if played == true then
-		response.Enabled = true 
-		task.wait(1)
-		response.Enabled = false
-		return 
-	else 
-		music:Play()
-	end
-
+ResponseButton1.MouseButton1Up:Connect(function()
+	if Typing == true then return end
+	if Dialogue == false then return end
+	TextInput(response1[StartMessage])
+	StartMessage = StartMessage + 1 
 end)
+
+ResponseButton2.MouseButton1Up:Connect(function()
+	if Typing == true then return end
+	if Dialogue == false then return end 
+	TextInput(response2[StartMessage])
+	StartMessage = StartMessage + 1 
+end)
+
 
 -- Server Script
 local RS = game:GetService("ReplicatedStorage")
