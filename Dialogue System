@@ -1,7 +1,18 @@
+(Local set in GUI)
+
+-- GUI 
+local DialogueGUI = script.Parent.Parent.Parent
+local GuiFrame = DialogueGUI["Text Box"]
+local TextFrame = script.Parent
+local ResponseButton1 = GuiFrame.Response1
+local ResponseButton2 = GuiFrame.Response2
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local EventLog = replicatedStorage.Events.TestDialogue
+
 -- Sounds/Music
 local DefaultMusic = DialogueGUI["Sounds/Music"].BackgroundMusic
 local DefaultSound = DialogueGUI["Sounds/Music"].TypingSound
-local musicPlaying = false
+local PlayingMusic = false
 
 -- variables
 local Typing = false
@@ -12,8 +23,6 @@ local StartMessage = 1
 local player = game.Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:FindFirstChildOfClass("Humanoid")
-local originalWalkSpeed = humanoid and humanoid.WalkSpeed or 16
-local originalJumpPower = humanoid and humanoid.JumpPower or 50
 
 -- Message and Response table
 local Messages = {
@@ -50,17 +59,14 @@ local function TextInput(messageIndex)
 		Dialogue = false
 		StartMessage = 1
 		DefaultMusic:Stop()
-		musicPlaying = false
+		PlayingMusic = false
+		EventLog:FireServer()
 		return
 	end
-	
-	if typing == true then return end
-	if Dialogue == true then return end
 
 	DialogueGUI.Enabled = true 
 	Dialogue = true 
 	Typing = true 
-	Lock()
 
 	TextFrame.Text = ""
 	ResponseButton1.Text = resp1.Text or ""
@@ -76,11 +82,14 @@ local function TextInput(messageIndex)
 end
 
 EventLog.OnClientEvent:Connect(function()
+	if Typing == true then return end
 	StartMessage = 1
 	TextInput(StartMessage)
-	if musicPlaying == true then 
+	if PlayingMusic == true then 
+		return
+	else 
 		DefaultMusic:Play()
-		musicPlaying = true 
+		PlayingMusic = true 
 	end
 end)
 
@@ -108,3 +117,23 @@ ResponseButton2.MouseButton1Up:Connect(function()
 	end
 end)
 
+(ServerSide set in NPC)
+
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local DialogueEvent = ReplicatedStorage.Events.TestDialogue
+local ProxPrompt = script.Parent
+
+local function onPlayerInteract(player)
+	DialogueEvent:FireClient(player)
+	ProxPrompt.Enabled = false
+end
+
+local function EnableProx(player)
+	ProxPrompt.Enabled = true
+end
+
+ProxPrompt.Triggered:Connect(onPlayerInteract)
+
+DialogueEvent.OnServerEvent:Connect(EnableProx)
+  
