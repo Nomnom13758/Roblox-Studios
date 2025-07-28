@@ -1,15 +1,7 @@
--- GUI 
-local DialogueGUI = script.Parent.Parent.Parent
-local GuiFrame = DialogueGUI["Text Box"]
-local TextFrame = script.Parent
-local ResponseButton1 = GuiFrame.Response1
-local ResponseButton2 = GuiFrame.Response2
-local replicatedStorage = game:GetService("ReplicatedStorage")
-local EventLog = replicatedStorage.Events.TestDialogue
-
 -- Sounds/Music
 local DefaultMusic = DialogueGUI["Sounds/Music"].BackgroundMusic
 local DefaultSound = DialogueGUI["Sounds/Music"].TypingSound
+local musicPlaying = false
 
 -- variables
 local Typing = false
@@ -18,22 +10,31 @@ local StartMessage = 1
 
 -- other 
 local player = game.Players.LocalPlayer
-
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:FindFirstChildOfClass("Humanoid")
+local originalWalkSpeed = humanoid and humanoid.WalkSpeed or 16
+local originalJumpPower = humanoid and humanoid.JumpPower or 50
 
 -- Message and Response table
 local Messages = {
 	[1] = "Hello World",
-	[2] = nil
+	[2] = "...",
+	[3] = "Goodbye!",
+	[4] = nil
 }
 
 local response1 = {
-	[1] = "Place Holder!",
-	[2] = nil
+	[1] = {Text = "Hello!", Next = 2},
+	[2] = {Text = "End", Next = nil},
+	[3] = {Text = "End", Next = nil},
+	[4] = nil
 }
 
 local response2 = {
-	[1] = "Place Holder!",
-	[2] = nil
+	[1] = {Text = "Goodbye!", Next = 3},
+	[2] = {Text = "End", Next = nil},
+	[3] = {Text = "End", Next = nil},
+	[4] = nil
 }
 
 -- Messaging/Writing script
@@ -42,48 +43,68 @@ local function TextInput(messageIndex)
 	local resp1 = response1[messageIndex]
 	local resp2 = response2[messageIndex]
 
-	-- If no message or responses, turn off GUI and reset state
+	-- Check for messages
 	if message == nil or resp1 == nil or resp2 == nil then
 		DialogueGUI.Enabled = false
 		Typing = false
 		Dialogue = false
 		StartMessage = 1
 		DefaultMusic:Stop()
+		musicPlaying = false
 		return
 	end
+	
+	if typing == true then return end
+	if Dialogue == true then return end
 
 	DialogueGUI.Enabled = true 
 	Dialogue = true 
 	Typing = true 
+	Lock()
 
 	TextFrame.Text = ""
-	ResponseButton1.Text = resp1 or ""
-	ResponseButton2.Text = resp2 or ""
+	ResponseButton1.Text = resp1.Text or ""
+	ResponseButton2.Text = resp2.Text or ""
 
-	-- Messages being typed out 
+	-- Typing effect on the GUI
 	for i, v in message:split("") do
 		TextFrame.Text = TextFrame.Text..v
 		DefaultSound:Play()
-		wait(0.05)
+		wait(0.06)
 	end
 	Typing = false
 end
 
 EventLog.OnClientEvent:Connect(function()
+	StartMessage = 1
 	TextInput(StartMessage)
-	DefaultMusic:Play()
+	if musicPlaying == true then 
+		DefaultMusic:Play()
+		musicPlaying = true 
+	end
 end)
 
 ResponseButton1.MouseButton1Up:Connect(function()
 	if Typing == true then return end
 	if Dialogue == false then return end
-	StartMessage = StartMessage + 1 
-	TextInput(StartMessage)
+	local resp = response1[StartMessage]
+	if resp and resp.Next then
+		StartMessage = resp.Next
+		TextInput(StartMessage)
+	else
+		TextInput(nil)
+	end
 end)
 
 ResponseButton2.MouseButton1Up:Connect(function()
 	if Typing == true then return end
 	if Dialogue == false then return end 
-	StartMessage = StartMessage + 1 
-	TextInput(StartMessage)
+	local resp = response2[StartMessage]
+	if resp and resp.Next then
+		StartMessage = resp.Next
+		TextInput(StartMessage)
+	else
+		TextInput(nil)
+	end
 end)
+
