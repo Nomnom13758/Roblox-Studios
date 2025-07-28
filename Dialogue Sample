@@ -16,6 +16,10 @@ local Typing = false
 local Dialogue = false
 local StartMessage = 1 
 
+-- other 
+local player = game.Players.LocalPlayer
+
+
 -- Message and Response table
 local Messages = {
 	[1] = "Hello World",
@@ -32,27 +36,32 @@ local response2 = {
 	[2] = nil
 }
 
-
 -- Messaging/Writing script
-local function TextInput(messages:string)
-	if messages == nil or response1 == nil or response2 == nil then
+local function TextInput(messageIndex)
+	local message = Messages[messageIndex]
+	local resp1 = response1[messageIndex]
+	local resp2 = response2[messageIndex]
+
+	-- If no message or responses, turn off GUI and reset state
+	if message == nil or resp1 == nil or resp2 == nil then
 		DialogueGUI.Enabled = false
 		Typing = false
 		Dialogue = false
 		StartMessage = 1
-		DefaultMusic:stop()
+		DefaultMusic:Stop()
+		return
 	end
+
 	DialogueGUI.Enabled = true 
 	Dialogue = true 
 	Typing = true 
-	
-	
+
 	TextFrame.Text = ""
-	ResponseButton1.Text = ""
-	ResponseButton2.Text = ""
-	
+	ResponseButton1.Text = resp1 or ""
+	ResponseButton2.Text = resp2 or ""
+
 	-- Messages being typed out 
-	for i, v in messages:split("") do
+	for i, v in message:split("") do
 		TextFrame.Text = TextFrame.Text..v
 		DefaultSound:Play()
 		wait(0.05)
@@ -61,32 +70,20 @@ local function TextInput(messages:string)
 end
 
 EventLog.OnClientEvent:Connect(function()
-	TextInput(Messages[StartMessage])
+	TextInput(StartMessage)
 	DefaultMusic:Play()
 end)
 
 ResponseButton1.MouseButton1Up:Connect(function()
 	if Typing == true then return end
 	if Dialogue == false then return end
-	TextInput(response1[StartMessage])
 	StartMessage = StartMessage + 1 
+	TextInput(StartMessage)
 end)
 
 ResponseButton2.MouseButton1Up:Connect(function()
 	if Typing == true then return end
 	if Dialogue == false then return end 
-	TextInput(response2[StartMessage])
 	StartMessage = StartMessage + 1 
+	TextInput(StartMessage)
 end)
-
-
--- Server Script
-local RS = game:GetService("ReplicatedStorage")
-local clickEvent = RS.Events.Sans
-
-local function onPlayerClick(player)
-	clickEvent:FireClient(player)
-end
-
-local clickDetector = game.Workspace.SANSSSSS.ClickDetector
-clickDetector.MouseClick:Connect(onPlayerClick)   
