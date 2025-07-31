@@ -1,13 +1,12 @@
 (Local set in GUI)
 
 -- GUI 
-local DialogueGUI = script.Parent.Parent.Parent
-local GuiFrame = DialogueGUI["Text Box"]
-local TextFrame = script.Parent
-local ResponseButton1 = GuiFrame.Response1
-local ResponseButton2 = GuiFrame.Response2
-local replicatedStorage = game:GetService("ReplicatedStorage")
-local EventLog = replicatedStorage.Events.TestDialogue
+local DialogueGUI = script.Parent.Parent.Parent  -- Screen GUI
+local GuiFrame = DialogueGUI["Text Box"] -- Frame 
+local TextFrame = script.Parent -- TextFrame 
+local ResponseButton1 = GuiFrame.Response1 -- TextButton 1
+local ResponseButton2 = GuiFrame.Response2 -- TextButton 2
+local ImageFrame = GuiFrame.CharacterImage -- ImageLabel
 
 -- Sounds/Music
 local DefaultMusic = DialogueGUI["Sounds/Music"].BackgroundMusic
@@ -23,24 +22,35 @@ local StartMessage = 1
 local player = game.Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:FindFirstChildOfClass("Humanoid")
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local EventLog = replicatedStorage.Events.TestDialogue -- Event that connects server and client
 
 -- Message and Response table
 local Messages = {
-	[1] = "Hello World",
-	[2] = "...",
-	[3] = "Goodbye!",
+	[1] = "PlaceHolder1",
+	[2] = "PlaceHolder2",
+	[3] = "PlaceHolder3",
+	[4] = nil
+}
+
+-- Use Decals for images
+
+local imageId = {
+	[1] = "132747504769823", -- Example
+	[2] = "PlaceHolder",
+	[3] = "PlaceHolder",
 	[4] = nil
 }
 
 local response1 = {
-	[1] = {Text = "Hello!", Next = 2},
+	[1] = {Text = "PlaceHolder", Next = 2},
 	[2] = {Text = "End", Next = nil},
 	[3] = {Text = "End", Next = nil},
 	[4] = nil
 }
 
 local response2 = {
-	[1] = {Text = "Goodbye!", Next = 3},
+	[1] = {Text = "PlaceHolder2", Next = 3},
 	[2] = {Text = "End", Next = nil},
 	[3] = {Text = "End", Next = nil},
 	[4] = nil
@@ -51,6 +61,7 @@ local function TextInput(messageIndex)
 	local message = Messages[messageIndex]
 	local resp1 = response1[messageIndex]
 	local resp2 = response2[messageIndex]
+	local ImageID = imageId[messageIndex]
 
 	-- Check for messages
 	if message == nil or resp1 == nil or resp2 == nil then
@@ -71,6 +82,11 @@ local function TextInput(messageIndex)
 	TextFrame.Text = ""
 	ResponseButton1.Text = resp1.Text or ""
 	ResponseButton2.Text = resp2.Text or ""
+	if ImageID then
+		ImageFrame.Image = "rbxassetid://" .. ImageID
+	else
+		ImageFrame.Image = ""
+	end
 
 	-- Typing effect on the GUI
 	for i, v in message:split("") do
@@ -85,6 +101,7 @@ EventLog.OnClientEvent:Connect(function()
 	if Typing == true then return end
 	StartMessage = 1
 	TextInput(StartMessage)
+
 	if PlayingMusic == true then 
 		return
 	else 
@@ -97,6 +114,7 @@ ResponseButton1.MouseButton1Up:Connect(function()
 	if Typing == true then return end
 	if Dialogue == false then return end
 	local resp = response1[StartMessage]
+	local img = imageId[StartMessage]
 	if resp and resp.Next then
 		StartMessage = resp.Next
 		TextInput(StartMessage)
@@ -109,6 +127,7 @@ ResponseButton2.MouseButton1Up:Connect(function()
 	if Typing == true then return end
 	if Dialogue == false then return end 
 	local resp = response2[StartMessage]
+	local img = imageId[StartMessage]
 	if resp and resp.Next then
 		StartMessage = resp.Next
 		TextInput(StartMessage)
@@ -117,12 +136,13 @@ ResponseButton2.MouseButton1Up:Connect(function()
 	end
 end)
 
+
 (ServerSide set in NPC)
 
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DialogueEvent = ReplicatedStorage.Events.TestDialogue
-local ProxPrompt = script.Parent
+local ProxPrompt = script.Parent -- Proximity prompt on NPC (can be switched for clickDetector) 
 
 local invincibleConn = nil
 local currentHumanoid = nil
@@ -164,6 +184,7 @@ local function EnableProx(player)
             humanoid.WalkSpeed = 16
             humanoid.JumpPower = 50
 
+            -- Restore vulnerability
             if invincibleConn then
                 invincibleConn:Disconnect()
                 invincibleConn = nil
@@ -177,5 +198,4 @@ end
 
 ProxPrompt.Triggered:Connect(onPlayerInteract)
 DialogueEvent.OnServerEvent:Connect(EnableProx)
-
 
