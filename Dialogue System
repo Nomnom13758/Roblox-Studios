@@ -72,6 +72,7 @@ local function TextInput(messageIndex)
 		DefaultMusic:Stop()
 		PlayingMusic = false
 		EventLog:FireServer()
+		game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, true)
 		return
 	end
 
@@ -99,6 +100,7 @@ end
 
 EventLog.OnClientEvent:Connect(function()
 	if Typing == true then return end
+	game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
 	StartMessage = 1
 	TextInput(StartMessage)
 
