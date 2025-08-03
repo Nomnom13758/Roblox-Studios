@@ -1,0 +1,141 @@
+-- GUI 
+local DialogueGUI = script.Parent.Parent.Parent
+local GuiFrame = DialogueGUI["Text Box"]
+local TextFrame = script.Parent
+local ResponseButton1 = GuiFrame.Response1
+local ResponseButton2 = GuiFrame.Response2
+local ImageFrame = GuiFrame.CharacterImage
+
+-- Sounds/Music
+local DefaultMusic = DialogueGUI["Sounds/Music"].BackgroundMusic
+local DefaultSound = DialogueGUI["Sounds/Music"].TypingSound
+local PlayingMusic = false
+
+-- variables
+local Typing = false
+local Dialogue = false
+local StartMessage = 1 
+
+-- other 
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:FindFirstChildOfClass("Humanoid")
+local MoneyGui = DialogueGUI.Parent["Money display"]
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local EventLog = replicatedStorage.Events.TestDialogue
+
+-- Message and Response table
+local Messages = {
+	[1] = "Hello!",
+	[2] = "...",
+	[3] = "Goodbye!",
+	[4] = nil
+}
+
+-- Use Decals for images
+
+local imageId = {
+	[1] = "132747504769823",
+	[2] = "132747504769823",
+	[3] = "92462921337823",
+	[4] = nil
+}
+
+local response1 = {
+	[1] = {Text = "Hello!", Next = 2},
+	[2] = {Text = "End", Next = nil},
+	[3] = {Text = "End", Next = nil},
+	[4] = nil
+}
+
+local response2 = {
+	[1] = {Text = "Goodbye!", Next = 3},
+	[2] = {Text = "End", Next = nil},
+	[3] = {Text = "End", Next = nil},
+	[4] = nil
+}
+
+-- Messaging/Writing script
+local function TextInput(messageIndex)
+	local message = Messages[messageIndex]
+	local resp1 = response1[messageIndex]
+	local resp2 = response2[messageIndex]
+	local ImageID = imageId[messageIndex]
+
+	-- Check for messages
+	if message == nil or resp1 == nil or resp2 == nil then
+		DialogueGUI.Enabled = false
+		Typing = false
+		Dialogue = false
+		StartMessage = 1
+		DefaultMusic:Stop()
+		PlayingMusic = false
+		EventLog:FireServer()
+		MoneyGui.Enabled = true
+		game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, true)
+		return
+	end
+
+	DialogueGUI.Enabled = true 
+	Dialogue = true 
+	Typing = true 
+	MoneyGui.Enabled = false
+
+	TextFrame.Text = ""
+	ResponseButton1.Text = resp1.Text or ""
+	ResponseButton2.Text = resp2.Text or ""
+	if ImageID then
+		ImageFrame.Image = "rbxassetid://" .. ImageID
+	else
+		ImageFrame.Image = ""
+	end
+
+	-- Typing effect on the GUI
+	for i, v in message:split("") do
+		TextFrame.Text = TextFrame.Text..v
+		DefaultSound:Play()
+		wait(0.06)
+	end
+	Typing = false
+end
+
+EventLog.OnClientEvent:Connect(function()
+	if Typing == true then return end
+	game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
+	StartMessage = 1
+	TextInput(StartMessage)
+
+	if PlayingMusic == true then 
+		return
+	else 
+		DefaultMusic:Play()
+		PlayingMusic = true 
+	end
+end)
+
+ResponseButton1.MouseButton1Up:Connect(function()
+	if Typing == true then return end
+	if Dialogue == false then return end
+	local resp = response1[StartMessage]
+	local img = imageId[StartMessage]
+	if resp and resp.Next then
+		StartMessage = resp.Next
+		TextInput(StartMessage)
+	else
+		TextInput(nil)
+	end
+end)
+
+ResponseButton2.MouseButton1Up:Connect(function()
+	if Typing == true then return end
+	if Dialogue == false then return end 
+	local resp = response2[StartMessage]
+	local img = imageId[StartMessage]
+	if resp and resp.Next then
+		StartMessage = resp.Next
+		TextInput(StartMessage)
+	else
+		TextInput(nil)
+	end
+end)
+
